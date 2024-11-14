@@ -9,7 +9,7 @@ import NavBar from './components/NavBar.jsx';
 function App() {
   return (
     <GameProvider>
-        <NavBar /> {/* Navbar 在每个页面都显示 */}
+        <NavBar />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/game/:difficulty" element={<GamePage />} />

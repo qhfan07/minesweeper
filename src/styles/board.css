@@ -1,27 +1,23 @@
-/*
-所有css都要import到相应的组件或者页面中，我不知道你还会不会加别的css，所以你统一加import吧我一个没写，比如board中import './Board.css'; 
-*/
 .board {
     display: grid;
-    gap: 0; /* 去除格子之间的间隙 */
-    margin: 0 auto; /* 居中对齐 */
-    /* 设置宽度，使网格单元格按比例紧密排列 */
+    gap: 0; 
+    margin: 0 auto;
     width: fit-content;
   }
   
   .board.easy {
-    grid-template-columns: repeat(8, 30px); /* 8 列，设置具体的列宽 */
-    grid-template-rows: repeat(8, 30px);    /* 8 行，设置具体的行高 */
+    grid-template-columns: repeat(8, 30px); 
+    grid-template-rows: repeat(8, 30px);  
   }
   
   .board.medium {
-    grid-template-columns: repeat(16, 30px); /* 16 列 */
-    grid-template-rows: repeat(16, 30px);    /* 16 行 */
+    grid-template-columns: repeat(16, 30px); 
+    grid-template-rows: repeat(16, 30px);   
   }
   
   .board.hard {
-    grid-template-columns: repeat(30, 30px); /* 30 列 */
-    grid-template-rows: repeat(16, 30px);    /* 16 行 */
+    grid-template-columns: repeat(30, 30px); 
+    grid-template-rows: repeat(16, 30px); 
   }
   
   .cell {

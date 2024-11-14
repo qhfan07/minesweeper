@@ -15,17 +15,16 @@ export const GameProvider = ({ children }) => {
   const [currentDifficulty, setCurrentDifficulty] = useState('easy');
   const [hoveredCell, setHoveredCell] = useState(null);
 
-  // 用 useCallback 包裹 initializeGrid，防止不必要的重新创建
+
   const initializeGrid = useCallback((rows, cols, mines) => {
     const newGrid = generateGrid(rows, cols, mines);
     setGrid(newGrid);
     setRemainingMines(mines);
     setGameOver(false);
     setIsWin(false);
-    setIsFirstClick(true); // 每次初始化时重置为首次点击
+    setIsFirstClick(true); 
   }, []);
 
-  // 设置当前难度的函数
   const updateDifficulty = useCallback((difficulty) => {
     setCurrentDifficulty(difficulty);
   }, []);
@@ -33,7 +32,6 @@ export const GameProvider = ({ children }) => {
   const handleCellClick = (row, col) => {
     if (gameOver || grid[row][col].isFlagged || grid[row][col].isSelected) return;
 
-    // 在第一次点击时生成雷阵，并确保初始点击无雷
     if (isFirstClick) {
       const rows = grid.length;
       const cols = grid[0].length;
@@ -42,7 +40,7 @@ export const GameProvider = ({ children }) => {
       setGrid(newGrid);
       setIsFirstClick(false);
   
-      // 手动设置第一次点击的格子为已揭示状态
+
       newGrid[row][col].isSelected = true;
       newGrid[row][col].adjacentMines = calculateAdjacentMines(newGrid, row, col);
       setGrid(newGrid);
@@ -52,11 +50,11 @@ export const GameProvider = ({ children }) => {
     const updatedGrid = [...grid];
 
     if (updatedGrid[row][col].isMine) {
-      setGameOver(true); // 如果点击到雷，游戏结束
+      setGameOver(true);
       updatedGrid[row][col].isSelected = true;
     } else {
       updatedGrid[row][col].isSelected = true;
-      updatedGrid[row][col].adjacentMines = calculateAdjacentMines(updatedGrid, row, col); // 仅计算当前格子的雷数
+      updatedGrid[row][col].adjacentMines = calculateAdjacentMines(updatedGrid, row, col);
     }
 
     setGrid(updatedGrid);

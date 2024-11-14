@@ -2,9 +2,9 @@ nav {
     position: fixed;
     top: 0;
     width: 100%;
-    background-color: #4CAF50; /* 背景颜色 */
+    background-color: #4CAF50; 
     padding: 10px 0;
-    z-index: 1000; /* 确保导航栏在其他内容之上 */
+    z-index: 1000;
   }
   
   nav ul {
@@ -27,10 +27,10 @@ nav {
   }
   
   nav ul li a:hover {
-    color: #ddd; /* 鼠标悬停时的链接颜色 */
+    color: #ddd; 
   }
   
   body {
-    padding-top: 60px; /* 给主体内容顶部留出空间，以避免被固定的导航栏遮挡 */
+    padding-top: 60px;
   }
   

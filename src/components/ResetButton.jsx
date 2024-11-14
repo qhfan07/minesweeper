@@ -1,5 +1,3 @@
-//提供一个reset按钮来调用 initializeGrid 函数，以重置游戏网格。此组件通过 GameContext 调用 initializeGrid 来重置状态。
-
 import React, { useContext } from 'react';
 import { GameContext } from '../context/GameContext';
 import '../styles/resetbutton.css';
