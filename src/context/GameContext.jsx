@@ -1,118 +1,83 @@
-//context 负责存储和管理全局状态（如网格状态、游戏状态等），并提供必要的方法来改变状态。
-//components 负责渲染 UI，并在用户交互时触发相应的逻辑（如点击、标记、悬停等），通常通过调用 context 提供的方法来更新状态。
-//除了载入功能外别的逻辑都检查过，这个localstorage是我后面加的，载入有问题就删了把，4分额外分不要了，
-//如果你在浏览器中测试时，发现 localStorage 的载入或保存存在问题，可以调试 console.log 每次的保存和载入过程。
-
-import React, { createContext, useState, useEffect } from 'react';
-import { generateGrid, calculateAdjacentMines, revealSafeCells, checkWinCondition } from '../utils/generateGrid';
+import React, { createContext, useState, useCallback } from 'react';
+import { generateGrid } from '../utils/generateGrid';
+import { calculateAdjacentMines } from '../utils/calculateAdjacentMines';
+import { revealSafeCells } from '../utils/revealSafeCells';
+import { checkWinCondition } from '../utils/checkWinCondition';
 
 export const GameContext = createContext();
 
 export const GameProvider = ({ children }) => {
-  // 状态定义
   const [grid, setGrid] = useState([]);
   const [gameOver, setGameOver] = useState(false);
   const [isWin, setIsWin] = useState(false);
   const [remainingMines, setRemainingMines] = useState(0);
-  const [hasSafeFirstClick, setHasSafeFirstClick] = useState(true);
-  const [currentDifficulty, setCurrentDifficulty] = useState('easy'); // 管理当前难度
+  const [isFirstClick, setIsFirstClick] = useState(true); // 标记第一次点击
+  const [currentDifficulty, setCurrentDifficulty] = useState('easy');
   const [hoveredCell, setHoveredCell] = useState(null);
 
-  //这个载入和记录功能是我最后加的，不确定是否会有问题或者漏记录的值，需要看你是否还要加需要的状态
-  //使用 useEffect 来从 localStorage 载入和保存游戏状态的功能
-  useEffect(() => {
-    const savedGrid = localStorage.getItem('grid') ? JSON.parse(localStorage.getItem('grid')) : null;
-    const savedGameOver = localStorage.getItem('gameOver') ? JSON.parse(localStorage.getItem('gameOver')) : false;
-    const savedIsWin = localStorage.getItem('isWin') ? JSON.parse(localStorage.getItem('isWin')) : false;
-    const savedRemainingMines = localStorage.getItem('remainingMines') ? JSON.parse(localStorage.getItem('remainingMines')) : 0;
-    const savedHasSafeFirstClick = localStorage.getItem('hasSafeFirstClick') ? JSON.parse(localStorage.getItem('hasSafeFirstClick')) : true;
-    const savedCurrentDifficulty = localStorage.getItem('currentDifficulty') || 'easy';
-
-    if (savedGrid) {
-      setGrid(savedGrid);
-      setGameOver(savedGameOver);
-      setIsWin(savedIsWin);
-      setRemainingMines(savedRemainingMines);
-      setHasSafeFirstClick(savedHasSafeFirstClick);
-      setCurrentDifficulty(savedCurrentDifficulty);
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('grid', JSON.stringify(grid));
-    localStorage.setItem('gameOver', JSON.stringify(gameOver));
-    localStorage.setItem('isWin', JSON.stringify(isWin));
-    localStorage.setItem('remainingMines', JSON.stringify(remainingMines));
-    localStorage.setItem('hasSafeFirstClick', JSON.stringify(hasSafeFirstClick));
-    localStorage.setItem('currentDifficulty', currentDifficulty);
-  }, [grid, gameOver, isWin, remainingMines, hasSafeFirstClick, currentDifficulty]);
-
-  //后面我都检查过，包括它们运用的utils函数
-  const initializeGrid = (rows, cols, mines) => {
-    const newGrid = generateGrid(rows, cols, 0); // 初始不放置地雷数量为0，不放地雷只初始化
+  // 用 useCallback 包裹 initializeGrid，防止不必要的重新创建
+  const initializeGrid = useCallback((rows, cols, mines) => {
+    const newGrid = generateGrid(rows, cols, mines);
     setGrid(newGrid);
     setRemainingMines(mines);
     setGameOver(false);
     setIsWin(false);
-    setHasSafeFirstClick(true);
+    setIsFirstClick(true); // 每次初始化时重置为首次点击
+  }, []);
+
+  // 设置当前难度的函数
+  const updateDifficulty = useCallback((difficulty) => {
+    setCurrentDifficulty(difficulty);
+  }, []);
+
+  const handleCellClick = (row, col) => {
+    if (gameOver || grid[row][col].isFlagged || grid[row][col].isSelected) return;
+
+    // 在第一次点击时生成雷阵，并确保初始点击无雷
+    if (isFirstClick) {
+      const rows = grid.length;
+      const cols = grid[0].length;
+      const totalMines = remainingMines;
+      const newGrid = generateGrid(rows, cols, totalMines, { row, col });
+      setGrid(newGrid);
+      setIsFirstClick(false);
+  
+      // 手动设置第一次点击的格子为已揭示状态
+      newGrid[row][col].isSelected = true;
+      newGrid[row][col].adjacentMines = calculateAdjacentMines(newGrid, row, col);
+      setGrid(newGrid);
+      return;
+    }
+  
+    const updatedGrid = [...grid];
+
+    if (updatedGrid[row][col].isMine) {
+      setGameOver(true); // 如果点击到雷，游戏结束
+      updatedGrid[row][col].isSelected = true;
+    } else {
+      updatedGrid[row][col].isSelected = true;
+      updatedGrid[row][col].adjacentMines = calculateAdjacentMines(updatedGrid, row, col); // 仅计算当前格子的雷数
+    }
+
+    setGrid(updatedGrid);
+
+    if (checkWinCondition(updatedGrid)) {
+      setIsWin(true);
+      setGameOver(true);
+    }
   };
 
-  // 处理用户点击的函数
-  const handleCellClick = (row, col) => {
-    if (gameOver) return;
+  const handleFlagCell = (row, col) => {
+    if (gameOver || grid[row][col].isSelected) return;
 
-    let updatedGrid = [...grid];
-    const cell = updatedGrid[row][col];
-
-    //首次点击逻辑：1.generategrid初始化grid还有防止地雷已经保证了首次安全逻辑 2.首次点击中计算储存grid的AdjacentMines
-    if (hasSafeFirstClick) {
-      updatedGrid = generateGrid(grid.length, grid[0].length, remainingMines, { row, col }); //首次点击坐标
-      updatedGrid = calculateAdjacentMines(updatedGrid); //初始化后计算储存每个格子的周围地雷数量
-      setHasSafeFirstClick(false); //首次安全点击的设置已经结束
-    }
-
-    // 已选择的格子不能重复操作
-    if (cell.isSelected || cell.isFlagged) return;
-
-    // 选择格子
-    cell.isSelected = true;
-
-    //如果click cell.ismine这里连接了
-    if (cell.isMine) {
-      setIsWin(false);
-      setGameOver(true); 
-    } else { //本次点击不是地雷，需要判断目前是否所有安全格isselected
-      updatedGrid = revealSafeCells(updatedGrid, row, col); //改变iselected状态+bfs递归揭开格子
-      if (checkWinCondition(updatedGrid)) { //所有安全格子全部揭开了触发了gameover
-        setIsWin(true);
-        setGameOver(true);
-      }
-    }
+    const updatedGrid = [...grid];
+    updatedGrid[row][col].isFlagged = !updatedGrid[row][col].isFlagged;
+    setRemainingMines((prev) => prev + (updatedGrid[row][col].isFlagged ? -1 : 1));
     setGrid(updatedGrid);
   };
 
-  // 处理红旗标记逻辑
-  const handleFlagCell = (row, col) => {
-    if (gameOver) return;
-
-    const cell = grid[row][col];
-    if (!cell.isSelected) {
-      cell.isFlagged = !cell.isFlagged;
-      setGrid([...grid]);
-      setRemainingMines(remainingMines + (cell.isFlagged ? -1 : 1));
-    }
-  };
-
-  // 处理鼠标悬停状态
-  const handleMouseEnter = (row, col) => {
-    if (!grid[row][col].isSelected) {
-      setHoveredCell({ row, col });
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setHoveredCell(null);
-  };
+  const handleMouseEnter = (row, col) => setHoveredCell({ row, col });
+  const handleMouseLeave = () => setHoveredCell(null);
 
   return (
     <GameContext.Provider
@@ -122,20 +87,18 @@ export const GameProvider = ({ children }) => {
         isWin,
         remainingMines,
         currentDifficulty,
-        setCurrentDifficulty,
+        setCurrentDifficulty: updateDifficulty,
         initializeGrid,
         handleCellClick,
         handleFlagCell,
-        handleMouseEnter,
-        handleMouseLeave,
         hoveredCell,
         setGameOver,
         setIsWin,
+        handleMouseEnter,
+        handleMouseLeave,
       }}
     >
       {children}
     </GameContext.Provider>
   );
 };
-
-
