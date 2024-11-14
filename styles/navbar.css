@@ -1,0 +1,36 @@
+nav {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background-color: #4CAF50; /* 背景颜色 */
+    padding: 10px 0;
+    z-index: 1000; /* 确保导航栏在其他内容之上 */
+  }
+  
+  nav ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+  }
+  
+  nav ul li {
+    margin: 0 15px;
+  }
+  
+  nav ul li a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.2rem;
+    transition: color 0.3s;
+  }
+  
+  nav ul li a:hover {
+    color: #ddd; /* 鼠标悬停时的链接颜色 */
+  }
+  
+  body {
+    padding-top: 60px; /* 给主体内容顶部留出空间，以避免被固定的导航栏遮挡 */
+  }
+  
